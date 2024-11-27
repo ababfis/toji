@@ -8,3 +8,6 @@ def create_table_users():
         pass
     finally:
         pass
+
+def create():
+    pass
