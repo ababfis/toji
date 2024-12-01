@@ -2,20 +2,48 @@ import telebot
 from telebot import types
 import random
 import db, setings
+import datetime
+import json
 
 bot = telebot.TeleBot(setings.BOT_TOKEN)
-
 quotes = {}
-spisok = {}
-def add_user(chat_id, user):
-    global spisok 
-    if chat_id not in spisok:
-        spisok[chat_id] = []
-
-    if not any(x['id'] == user.id for x in spisok[chat_id]):
-        spisok[chat_id].append({'id': user.id, 'name': user.first_name or 'nn'}) 
-
+user_data = {}
 tea_stats = {}
+
+def load_user_data():
+    global user_data
+    try:
+        with open('user_data.json', 'r', encoding='utf-8') as file:
+            user_data = json.load(file)
+    except FileNotFoundError:
+        user_data = {}
+
+def save_user_data():
+    with open('user_data.json', 'w', encoding='utf-8') as file:
+        json.dump(user_data, file, ensure_ascii=False, indent=4)
+
+def load_quotes():
+    global quotes
+    try:
+        with open('quotes.json', 'r', encoding='utf-8') as file:
+            quotes = json.load(file)
+    except FileNotFoundError:
+        quotes = {}
+
+def save_quotes():
+    with open('quotes.json', 'w', encoding='utf-8') as file:
+        json.dump(quotes, file, ensure_ascii=False, indent=4)
+
+
+def add_user(chat_id, user):
+    global user_data 
+    if chat_id not in user_data:
+        user_data[chat_id] = []
+
+    if not any(x['id'] == user.id for x in user_data[chat_id]):
+        user_data[chat_id].append({'id': user.id, 'name': user.first_name or 'nn'}) 
+
+
 
 @bot.my_chat_member_handler()
 
@@ -28,7 +56,7 @@ def drink_tea(chat_id, user_id, user_name):
         tea_stats[chat_id][user_id] = {
             'name': user_name,
             'tea_drink': 0,
-            'kettle_failed': 5
+            'kettle_failed': 30
         }
     if tea_stats[chat_id][user_id]['kettle_failed'] > 0:
         if random.randint(1, 100) <= 25:
@@ -77,6 +105,15 @@ def media(message: types.Message):
     gif = r'src\GIF\video_2024-11-17_11-43-49.mp4'
     with open(gif, '+rb') as file:
         bot.send_animation(message.chat.id, file)
+
+@bot.message_handler(func=lambda message:True, content_types=['text', 'sticker', 'photo', 'video', 'audio', 'document', 'location', 'contact', 'video_note', 'voice'])
+def all_message_handler(message:types.Message):
+    user_id = str(message.chat.id)
+    today = datetime.date.today()
+    week = datetime.date.today().isocalendar()[1]
+    month = datetime.date.today().month
+    user_info = 
+
 
 @bot.message_handler(commands=['q'])
 def quotes_chat(message: types.Message):
