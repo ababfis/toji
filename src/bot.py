@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 import random
-import db, setings
+import setings
 import datetime
 import json
 
@@ -19,6 +19,12 @@ def load_user_data():
             user_data = json.load(file)
     except FileNotFoundError:
         user_data = {}
+    
+    # Инициализация отсутствующих ключей для всех пользователей
+    for data in user_data.values():
+        data.setdefault('name', 'nn')
+        data.setdefault('tea_drink', 0)
+        data.setdefault('kettle_failed', 30)
 
 def save_user_data():
     with open('user_data.json', 'w', encoding='utf-8') as file:
@@ -39,20 +45,19 @@ def save_quotes():
 # Функция для добавления пользователя
 def add_user(user):
     user_id = str(user.id)
-    if user_id not in user_data:
-        user_data[user_id] = {
-            'name': user.first_name or 'nn',
-            'tea_drink': 0,
-            'kettle_failed': 30
-        }
+    user_data.setdefault(user_id, {})
+    user_data[user_id].setdefault('name', user.first_name or 'nn')
+    user_data[user_id].setdefault('tea_drink', 0)
+    user_data[user_id].setdefault('kettle_failed', 30)
+
 # Обработка статуса бота в чате
 @bot.my_chat_member_handler()
-def check_admin(message:types.ChatMemberUpdated):
+def check_admin(message: types.ChatMemberUpdated):
     if message.chat.type in ['group', 'supergroup']:
         old_status = message.old_chat_member.status
         new_status = message.new_chat_member.status
         if old_status != 'administrator' and new_status == 'administrator':
-            bot.send_message(chat_id=message.chat.id, text= 'МУ ХА ХА ХА ХА Я ТЕПЕРЬ АДМИН Я ВАС КАК ГОДЖО РАТАТАТААТААТТ\nА ЧТО БЫ УЗНАТЬ ВСЕ МОИ ВИДЫ РАССТРЕЛА НАПИШИ /info')
+            bot.send_message(chat_id=message.chat.id, text='Всем привет! Я теперь администратор этого чата.\nНапишите /info, чтобы узнать мои команды.')
 
 #Обработка запроса команды "Выпить чай"
 @bot.message_handler(func=lambda message: message.text and message.text.lower() == 'выпить чай')
@@ -87,21 +92,28 @@ def tea(message: types.Message):
     bot.reply_to(message, response)
     save_user_data()
 
-# Обработка функции забора гифки пользователя   
+
+# Обработка функции отправки гифки
 @bot.message_handler(content_types=['video', 'animation'])
 def media(message: types.Message):
     gif = r'src\GIF\video_2024-11-17_11-43-49.mp4'
-    with open(gif, '+rb') as file:
-        bot.send_animation(message.chat.id, file)
+    try:
+        with open(gif, 'rb') as file:
+            bot.send_animation(message.chat.id, file)
+    except Exception as e:
+        print(f"Ошибка отправки гифки: {e}")
 
 # Обработка любого сообщения и изменение количества сообщений отправленных пользователем
-@bot.message_handler(func=lambda message:True, content_types=['text', 'sticker', 'photo', 'video', 'audio', 'document', 'location', 'contact', 'video_note', 'voice'])
-def all_message_handler(message:types.Message):
-    user_id = str(message.chat.id)
+@bot.message_handler(func=lambda message: True, content_types=['text', 'sticker', 'photo', 'video', 'audio', 'document', 'location', 'contact', 'video_note', 'voice'])
+def all_message_handler(message: types.Message):
+    user = message.from_user
+    user_id = str(user.id)
+    add_user(user)
+
+    user_info = user_data[user_id]
     today = datetime.date.today()
     week = datetime.date.today().isocalendar()[1]
     month = datetime.date.today().month
-    user_info = 1
 
 
 # Обработчик команды "/q" для работы с цитатами
