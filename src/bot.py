@@ -108,12 +108,36 @@ def media(message: types.Message):
 def all_message_handler(message: types.Message):
     user = message.from_user
     user_id = str(user.id)
-    add_user(user)
-
-    user_info = user_data[user_id]
+    
     today = datetime.date.today()
     week = datetime.date.today().isocalendar()[1]
     month = datetime.date.today().month
+    user_info = user_data.setdefault(user_id, {})
+    messages = user_info.setdefault('messsages', {})
+    messages['total'] = messages.get('total', 0) + 1
+    messages_by_day = messages.default('by_day', {})
+    messages_by_day[str(today)] = messages_by_day.get(str(today), 0) + 1
+
+    messages_by_month =  messages.default('by_month', {})
+    messages_by_month[str(month)] = messages_by_month.get(str(month), 0) + 1
+
+    messages_by_week =  messages.default('by_week', {})
+    messages_by_week[str(week)] = messages_by_week.get(str(week), 0) + 1
+
+    if message.text:
+        text = message.text
+        with open('bad_words.txt', 'r', encoding='utf-8') as file:
+        
+            bad_words = [line.strip().lower() for line in file if line.strip()]
+
+        for word in bad_words:
+            if word in text:
+                bad_word_count = user_info.get('bad_word_count', 0) + 1
+                user_info['bad_word_count'] = bad_word_count
+                if bad_word_count >= 3:
+                    #прописать позже секонд статус
+                    user_info['bad_word_count'] = 0
+                break
 
 
 # Обработчик команды "/q" для работы с цитатами
