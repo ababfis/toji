@@ -11,7 +11,7 @@ bot = telebot.TeleBot(setings.BOT_TOKEN)
 user_data = {}
 quotes = {}
 bad_w = set()
-rare_tea_list = ['спринг мелоди', 'китайский']
+rare_tea_list = ['спринг мелоди', 'китайский', 'чёрный чай']
 
 @bot.message_hendler(func=lambda message: message.text and message.text.lower() == 'кто я?')
 def information(message: types.Message):
