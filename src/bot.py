@@ -9,7 +9,68 @@ bot = telebot.TeleBot(setings.BOT_TOKEN)
 
 # Словари для хранения данных пользователей и цитат
 user_data = {}
-quotes = []
+quotes = {}
+bad_w = set()
+rare_tea_list = ['спринг мелоди', 'китайский']
+
+@bot.message_hendler(func=lambda message: message.text and message.text.lower() == 'кто я?')
+def information(message: types.Message):
+    global rare_tea_list
+
+    user = message.from_user
+    user_id = str(user.id)
+    add_user(user)
+
+    user_stats = user_data[user_id]
+    msg = user_stats['messages']
+
+    if set(rare_tea_list).issubset(set(user_stats['rare_tea'])):
+        main_status = 'Эксперт по чаю (китаец)'
+    elif len(user_stats['rare_tea']) >= 5:
+        main_status = 'Чайный мастер'
+    elif user_stats['tea_drink'] >= 60:
+        main_status = 'Любитель чая'
+    elif user_stats['tea_drink'] >= 1:
+        main_status = 'Новичoк'
+
+    else:
+        main_status = 'Бездарь'
+
+    second_status = user_stats.get('second_status', 'ну типо ну хз')
+    rewards = ', '.join(user_stats['rewards'] if user_stats['rewards'] else 'net nagrad')
+    rare_tea = ', '.join(user_stats['rare_tea'] if user_stats['rare_tea'] else 'net tea')
+    response = (
+        f"👤 Имя: {user_stats['name']}\n"
+        f"📊 Сообщений сегодня: {msg['by_day'].get(datetime.datetime.now().strftime('%Y-%m-%d'), 0)}\n"
+        f"📊 Сообщений за неделю: {msg['by_week'].get(str(datetime.datetime.now().isocalendar()[1]), 0)}\n"
+        f"📊 Сообщений за месяц: {msg['by_month'].get(str(datetime.datetime.now().month), 0)}\n"
+        f"📊 Всего сообщений: {msg['total']}\n"
+        f"🥇 Королевский клич: {main_status}\n"
+        f"🥈 ЗВАНИИЕЕЕЕЕ: {second_status}\n"
+        f"🏆 Награды: {rewards}\n"
+        f"🍵 Выпито чая: {user_stats['tea_drink']} мл\n"
+        f"🌟 Редкие чаи: {rare_tea}"
+    )
+    bot.reply_to(message, response)
+
+@bot.message_handler(commands=['info'])
+def info(message: types.Message):
+    commands = '''
+1. Вероятность (рандомный факт) - бот в ответ говорит что такой-то факт (столько-то процентов что правда) 
+2. Кто? (рандомный ник из группы "я думаю {рандомный пользователь} ответ на вопрос)
+3. Эдит (Отправка рандомного видоса)
+4. Бан (удаление из группы пользователя)
+5. /info - все команды бота
+6. Расстрелять ({пользователь который выбрал команду} расстрелял как гитлера {пользователь которого указали})
+7. Тодзи лох
+8. Кто я: Выводит информацию про пользователя. 
+9. Наградить/Снять награду (Только администратор группы можеть или награждать или снимать награды с человека, пересылкой сообщения от этого человека и написать какая награду ему присваивает. Также только администратор моржет снять награду)
+10.  пака лох (если кто то отравляет гиф или видео бот отправляет гиф без текста)
+11. выпить чай: ты випил чая!
+12. /q (создает цитату из сообщения на которое ответили команой оно нумируется можно посмотреть все цитаты и потом по номеру выводить любую из них)
+13. избить (пользователь) избил (пользовател на которого сообщение ответ) 
+14. тодзи включи музыку)
+'''
 
 # Функции для загрузки и сохранения данных
 def load_user_data():
@@ -21,10 +82,10 @@ def load_user_data():
         user_data = {}
     
     # Инициализация отсутствующих ключей для всех пользователей
-    for data in user_data.values():
-        data.setdefault('name', 'nn')
-        data.setdefault('tea_drink', 0)
-        data.setdefault('kettle_failed', 30)
+    # for data in user_data.values():
+    #     data.setdefault('name', 'nn')
+    #     data.setdefault('tea_drink', 0)
+    #     data.setdefault('kettle_failed', 30)
 
 def save_user_data():
     with open('user_data.json', 'w', encoding='utf-8') as file:
@@ -36,19 +97,46 @@ def load_quotes():
         with open('quotes.json', 'r', encoding='utf-8') as file:
             quotes = json.load(file)
     except FileNotFoundError:
-        quotes = []
+        quotes = {}
 
 def save_quotes():
     with open('quotes.json', 'w', encoding='utf-8') as file:
         json.dump(quotes, file, ensure_ascii=False, indent=4)
 
+def load_bad_words():
+    global bad_w
+    try:
+        with open('bad_words.txt', 'r', encoding='utf-8') as file:
+            for i in file:
+                word = i.strip().lower()
+                if word:
+                    bad_w.add(word)
+    except  FileNotFoundError:
+        bad_w = set()
+
+
 # Функция для добавления пользователя
 def add_user(user):
     user_id = str(user.id)
-    user_data.setdefault(user_id, {})
-    user_data[user_id].setdefault('name', user.first_name or 'nn')
-    user_data[user_id].setdefault('tea_drink', 0)
-    user_data[user_id].setdefault('kettle_failed', 30)
+    if user_id not in user_data:
+        user_data[user_id] = {
+            'name': user.first_name or 'nn',
+            'tea_drink': 0,
+            'kettle_failed': 100,
+            'messages': {
+                'total': 0,
+                'by_day': {},
+                'by_week': {},
+                'by_month': {}
+            },
+            'bad_word_count': 0,
+            'rare_tea': [],
+            'main_status': None,
+            'second_status': None,
+            'rewards': [],
+            'last_tea_time': None
+        }
+
 
 # Обработка статуса бота в чате
 @bot.my_chat_member_handler()
@@ -76,6 +164,11 @@ def tea(message: types.Message):
             else:
                 response = f'Чайник не вскипел 🤬 Смотри, чтобы девушка не появилась. Осталось не выпитых чаёв: {user_info["kettle_failed"]}'
         else:
+            if random.randint(1, 100) <= 1:
+                global rare_tea_list
+                rare_tea = random.choice(rare_tea_list)
+                user_info['rare_tea'].append(rare_tea)
+                response = f'ТЕБЕ ПОПАЛСЯ РЕДКИЙ ЧАЙ {rare_tea}'
             tea_amount = random.randint(1, 300)
             user_info['tea_drink'] += tea_amount
             if tea_amount <= 150:
@@ -104,40 +197,45 @@ def media(message: types.Message):
         print(f"Ошибка отправки гифки: {e}")
 
 # Обработка любого сообщения и изменение количества сообщений отправленных пользователем
-@bot.message_handler(func=lambda message: True, content_types=['text', 'sticker', 'photo', 'video', 'audio', 'document', 'location', 'contact', 'video_note', 'voice'])
-def all_message_handler(message: types.Message):
-    user = message.from_user
-    user_id = str(user.id)
+
+def all_message_handler(messages: list):
+    for message in messages:
+        if not message.from_user:
+            continue
     
-    today = datetime.date.today()
-    week = datetime.date.today().isocalendar()[1]
-    month = datetime.date.today().month
-    user_info = user_data.setdefault(user_id, {})
-    messages = user_info.setdefault('messsages', {})
-    messages['total'] = messages.get('total', 0) + 1
-    messages_by_day = messages.default('by_day', {})
-    messages_by_day[str(today)] = messages_by_day.get(str(today), 0) + 1
-
-    messages_by_month =  messages.default('by_month', {})
-    messages_by_month[str(month)] = messages_by_month.get(str(month), 0) + 1
-
-    messages_by_week =  messages.default('by_week', {})
-    messages_by_week[str(week)] = messages_by_week.get(str(week), 0) + 1
-
-    if message.text:
-        text = message.text
-        with open('bad_words.txt', 'r', encoding='utf-8') as file:
+        user = message.from_user
+        user_id = str(user.id)
+        add_user(user)
         
-            bad_words = [line.strip().lower() for line in file if line.strip()]
+        today = datetime.date.today()
+        week = datetime.date.today().isocalendar()[1]
+        month = datetime.date.today().month
+        
+        user_info = user_data[user_id]
+        msg_stats  = user_info['message']
+        msg_stats['total'] += 1
 
-        for word in bad_words:
-            if word in text:
-                bad_word_count = user_info.get('bad_word_count', 0) + 1
-                user_info['bad_word_count'] = bad_word_count
-                if bad_word_count >= 3:
-                    #прописать позже секонд статус
-                    user_info['bad_word_count'] = 0
-                break
+        msg_stats['by_day'].setdefault(today, 0)
+        msg_stats['by_day'][today] += 1
+
+        msg_stats['by_month'].setdefault(month, 0)
+        msg_stats['by_month'][month] += 1
+
+        msg_stats['by_week'].setdefault(week, 0)
+        msg_stats['by_week']['week'] += 1
+
+        if message.text:
+            text = message.text.lower()
+            text_word = text.split()
+     
+            for word in text_word:
+                if word in bad_w:
+                    user_info['bad_word_count'] += 1
+                    if user_info['bad_word_count'] >= 3:
+                        #прописать позже секонд статус
+                        break
+                    break
+    save_user_data()
 
 
 # Обработчик команды "/q" для работы с цитатами
@@ -170,4 +268,6 @@ def quotes_chat(message: types.Message):
 if __name__ == '__main__':
     load_user_data()
     load_quotes()
+    load_bad_words()
+    bot.set_update_listener(all_message_handler)
     bot.polling()
