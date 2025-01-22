@@ -13,7 +13,7 @@ quotes = {}
 bad_w = set()
 rare_tea_list = ['спринг мелоди', 'китайский', 'чёрный чай']
 
-@bot.message_hendler(func=lambda message: message.text and message.text.lower() == 'кто я?')
+@bot.message_handler(func=lambda message: message.text and message.text.lower() == 'кто я?')
 def information(message: types.Message):
     global rare_tea_list
 
@@ -212,7 +212,7 @@ def all_message_handler(messages: list):
         month = datetime.date.today().month
         
         user_info = user_data[user_id]
-        msg_stats  = user_info['message']
+        msg_stats  = user_info['messages']
         msg_stats['total'] += 1
 
         msg_stats['by_day'].setdefault(today, 0)
@@ -222,7 +222,7 @@ def all_message_handler(messages: list):
         msg_stats['by_month'][month] += 1
 
         msg_stats['by_week'].setdefault(week, 0)
-        msg_stats['by_week']['week'] += 1
+        msg_stats['by_week'][week] += 1
 
         if message.text:
             text = message.text.lower()

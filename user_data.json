@@ -1,0 +1,36 @@
+{
+    "7090833227": {
+        "name": "ᅠ ᅠ",
+        "tea_drink": 71,
+        "kettle_failed": 100,
+        "messages": {
+            "total": 0,
+            "by_day": {},
+            "by_week": {},
+            "by_month": {}
+        },
+        "bad_word_count": 0,
+        "rare_tea": [],
+        "main_status": null,
+        "second_status": null,
+        "rewards": [],
+        "last_tea_time": null
+    },
+    "607973191": {
+        "name": "Денис",
+        "tea_drink": 0,
+        "kettle_failed": 100,
+        "messages": {
+            "total": 0,
+            "by_day": {},
+            "by_week": {},
+            "by_month": {}
+        },
+        "bad_word_count": 0,
+        "rare_tea": [],
+        "main_status": null,
+        "second_status": null,
+        "rewards": [],
+        "last_tea_time": null
+    }
+}
