@@ -207,9 +207,10 @@ def all_message_handler(messages: list):
         user_id = str(user.id)
         add_user(user)
         
-        today = datetime.date.today()
-        week = datetime.date.today().isocalendar()[1]
-        month = datetime.date.today().month
+        now = datetime.datetime.now()
+        today = now.strftime("%Y-%m-%d")
+        week = now.isocalendar()[1]
+        month = now.month
         
         user_info = user_data[user_id]
         msg_stats  = user_info['messages']
@@ -218,11 +219,11 @@ def all_message_handler(messages: list):
         msg_stats['by_day'].setdefault(today, 0)
         msg_stats['by_day'][today] += 1
 
-        msg_stats['by_month'].setdefault(month, 0)
-        msg_stats['by_month'][month] += 1
+        msg_stats['by_month'].setdefault(str(month), 0)
+        msg_stats['by_month'][str(month)] += 1
 
-        msg_stats['by_week'].setdefault(week, 0)
-        msg_stats['by_week'][week] += 1
+        msg_stats['by_week'].setdefault(str(week), 0)
+        msg_stats['by_week'][str(week)] += 1
 
         if message.text:
             text = message.text.lower()
