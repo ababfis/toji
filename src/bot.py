@@ -28,7 +28,7 @@ def information(message: types.Message):
         main_status = 'Эксперт по чаю (китаец)'
     elif len(user_stats['rare_tea']) >= 5:
         main_status = 'Чайный мастер'
-    elif user_stats['tea_drink'] >= 60:
+    elif user_stats['tea_drink'] >= 2000:
         main_status = 'Любитель чая'
     elif user_stats['tea_drink'] >= 1:
         main_status = 'Новичoк'
@@ -56,6 +56,7 @@ def information(message: types.Message):
 @bot.message_handler(commands=['info'])
 def info(message: types.Message):
     commands = '''
+Mои команды:\n
 1. Вероятность (рандомный факт) - бот в ответ говорит что такой-то факт (столько-то процентов что правда) 
 2. Кто? (рандомный ник из группы "я думаю {рандомный пользователь} ответ на вопрос)
 3. Эдит (Отправка рандомного видоса)
@@ -71,6 +72,7 @@ def info(message: types.Message):
 13. избить (пользователь) избил (пользовател на которого сообщение ответ) 
 14. тодзи включи музыку)
 '''
+    bot.send_message(message.chat.id, commands)
 
 # Функции для загрузки и сохранения данных
 def load_user_data():
@@ -121,6 +123,7 @@ def add_user(user):
     if user_id not in user_data:
         user_data[user_id] = {
             'name': user.first_name or 'nn',
+            'username': user.username,
             'tea_drink': 0,
             'kettle_failed': 100,
             'messages': {
@@ -264,6 +267,95 @@ def quotes_chat(message: types.Message):
             bot.reply_to(message, f"Сохранённые цитаты:\n{response}")
         else:
             bot.reply_to(message, "Нет сохранённых цитат.")
+
+def is_admin(chat_id, user_id ):
+    admins = bot.get_chat_administrators(chat_id)
+    return any(admin.user.id == user_id for admin in admins)
+
+@bot.message_handler(func=lambda message:message.text and message.text.lower().startswith('тодзи наградить'))
+def nagradit(message: types.Message):
+    if is_admin(message.chat.id, message.from_user.id):
+        try:
+            commands_part = message.text.split()
+            if len(commands_part) < 3:
+                bot.reply_to(message, 'неправильно написал бож🙄 нада так: тодзи наградить (имя этого немоща) (название награды)' )
+                return
+            # ['тодзи', 'наградить', '@username,' 'награда']
+            username = commands_part[2].strip('@')
+            reward_name = commands_part[3].strip()
+            if not reward_name:
+                bot.reply_to(message, 'да ты конченный? все я психушку вызываю НЕ ПУСТУЮ НАГРАДУ ДАВАЙ Я ТЕБЯ ВОДУХОМ НАГРАЖУ ПАРАЛЕЛИПИПИД')
+                return
+            user_to_reward = find_user_by_username(message.chat.id, username) 
+            if user_to_reward == None:
+                bot.send_message(message.chat.id, 'нету его пусть он мне чет напишет и тогда окей')
+                return
+
+            user_id = str(user_to_reward.id)
+            user_info = user_data.setdefault(user_id, {})
+            rewards = user_info.setdefault('rewards', [])
+
+            if len(rewards) >= 5:
+                bot.reply_to(message, f'этот немощь {user_to_reward.first_name} имеет максимум наград сначала удали одну а потом добавляй еще')
+
+            else:
+                rewards.append(reward_name)
+                save_user_data()
+                bot.reply_to(message, f'этот немощь {user_to_reward.first_name} получил нагдаду {reward_name}')
+            
+        except Exception as e:
+            bot.reply_to(message, f'произошли некоторые технические шоколадки типо вот: {e}')
+    else:
+        bot.reply_to(message, f'ахахаха какой то рапик хочет дать награду хотя у него не хватает социал кредита ')
+
+@bot.message_handler(func=lambda message:message.text and message.text.lower().startswith('тодзи снять награду'))
+def nagradit(message: types.Message):
+    if is_admin(message.chat.id, message.from_user.id):
+        try:
+            command_parts = message.text.split()
+    
+            if len(command_parts) < 3:
+                bot.reply_to(message, 'неправильно написал бож🙄 нада так: тодзи снять награду (имя этого немоща) (название награды)' )
+                return
+                
+            username = command_parts[3].strip('@')
+            reward_name = command_parts[4:].strip()
+
+            if not reward_name:
+                bot.reply_to(message, 'да ты конченный? все я психушку вызываю НЕ ПУСТУЮ НАГРАДУ ДАВАЙ Я ТЕБЯ ВОДУХОМ НАГРАЖУ ПАРАЛЕЛИПИПИД')
+                return
+                
+            user_to_reward = find_user_by_username(message.chat.id, username) 
+            if user_to_reward == None:
+                bot.send_message(message.chat.id, 'нету его пусть он мне чет напишет и тогда окей')
+                return   
+            
+            user_id = str(user_to_reward.id)
+            user_info = user_data.get(user_id, {})
+            rewards = user_info.get('rewards', [])
+
+            if reward_name in rewards:
+                rewards.remove(reward_name)
+                bot.reply_to(message, f'ну типо убрал')
+            
+            else:
+                bot.reply_to(message, f'такой награды у этого немоща нету')
+
+        except Exception as e:
+            bot.reply_to(message, f'ну кароче опять технические шоколадки типо {e}')
+
+    else:
+        bot.reply_to(message, f'ахаха у этого рапика даже что бы дать награду кредита не хватила а он снять хочет ты кто такой вообще????')
+
+def find_user_by_username(chat_id, username):
+    """
+    Ищет пользователя в чате по его username.
+    """
+    members = bot.get_chat_administrators(chat_id)#TODO сделать поиск по базе данных
+    for member in members:
+        if member.user.username and member.user.username.lower() == username.lower():
+            return member.user
+    return None
 
 # Запуск бота
 if __name__ == '__main__':

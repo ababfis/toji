@@ -4,15 +4,48 @@
         "tea_drink": 144,
         "kettle_failed": 99,
         "messages": {
-            "total": 3,
+            "total": 11,
             "by_day": {
-                "2025-01-22": 3
+                "2025-01-22": 3,
+                "2025-01-26": 4,
+                "2025-02-16": 4
             },
             "by_week": {
-                "4": 3
+                "4": 7,
+                "7": 4
             },
             "by_month": {
-                "1": 3
+                "1": 7,
+                "2": 4
+            }
+        },
+        "bad_word_count": 0,
+        "rare_tea": [],
+        "main_status": null,
+        "second_status": null,
+        "rewards": [
+            "SS"
+        ],
+        "last_tea_time": null
+    },
+    "607973191": {
+        "name": "Денис",
+        "tea_drink": 269,
+        "kettle_failed": 98,
+        "messages": {
+            "total": 28,
+            "by_day": {
+                "2025-01-22": 10,
+                "2025-01-26": 12,
+                "2025-02-16": 6
+            },
+            "by_week": {
+                "4": 22,
+                "7": 6
+            },
+            "by_month": {
+                "1": 22,
+                "2": 6
             }
         },
         "bad_word_count": 0,
@@ -22,20 +55,43 @@
         "rewards": [],
         "last_tea_time": null
     },
-    "607973191": {
-        "name": "Денис",
-        "tea_drink": 269,
-        "kettle_failed": 98,
+    "5366452093": {
+        "name": "Джонатан",
+        "tea_drink": 0,
+        "kettle_failed": 100,
         "messages": {
-            "total": 10,
+            "total": 6,
             "by_day": {
-                "2025-01-22": 10
+                "2025-01-26": 6
             },
             "by_week": {
-                "4": 10
+                "4": 6
             },
             "by_month": {
-                "1": 10
+                "1": 6
+            }
+        },
+        "bad_word_count": 0,
+        "rare_tea": [],
+        "main_status": null,
+        "second_status": null,
+        "rewards": [],
+        "last_tea_time": null
+    },
+    "7172881197": {
+        "name": "༶•┈┈⛧┈♛^᪲᪲фан Кенто Нанами^᪲᪲᪲♛┈⛧┈┈•༶",
+        "tea_drink": 0,
+        "kettle_failed": 100,
+        "messages": {
+            "total": 5,
+            "by_day": {
+                "2025-01-26": 5
+            },
+            "by_week": {
+                "4": 5
+            },
+            "by_month": {
+                "1": 5
             }
         },
         "bad_word_count": 0,
