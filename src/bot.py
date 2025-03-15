@@ -9,7 +9,7 @@ bot = telebot.TeleBot(setings.BOT_TOKEN)
 
 # Словари для хранения данных пользователей и цитат
 user_data = {}
-quotes = {}
+quotes = []
 bad_w = set()
 rare_tea_list = ['спринг мелоди', 'китайский', 'чёрный чай']
 
@@ -37,8 +37,8 @@ def information(message: types.Message):
         main_status = 'Бездарь'
 
     second_status = user_stats.get('second_status', 'ну типо ну хз')
-    rewards = ', '.join(user_stats['rewards'] if user_stats['rewards'] else 'net nagrad')
-    rare_tea = ', '.join(user_stats['rare_tea'] if user_stats['rare_tea'] else 'net tea')
+    rewards = ', '.join(user_stats['rewards']) if user_stats['rewards'] else 'net nagrad'
+    rare_tea = ', '.join(user_stats['rare_tea']) if user_stats['rare_tea'] else 'net tea'
     response = (
         f"👤 Имя: {user_stats['name']}\n"
         f"📊 Сообщений сегодня: {msg['by_day'].get(datetime.datetime.now().strftime('%Y-%m-%d'), 0)}\n"
@@ -99,7 +99,7 @@ def load_quotes():
         with open('quotes.json', 'r', encoding='utf-8') as file:
             quotes = json.load(file)
     except FileNotFoundError:
-        quotes = {}
+        quotes = []
 
 def save_quotes():
     with open('quotes.json', 'w', encoding='utf-8') as file:
@@ -156,34 +156,34 @@ def tea(message: types.Message):
     user = message.from_user
     user_id = str(user.id)
     add_user(user)
-
+    response = ''
     user_info = user_data[user_id]
 
     if user_info['kettle_failed'] > 0:
         if random.randint(1, 100) <= 25:
             user_info['kettle_failed'] -= 1
             if user_info['kettle_failed'] == 0:
-                response = 'ТЫ БЫЛ ИЗБРАННИКОМ! ВСЕ ДУМАЛИ, ЧТО ТЫ БУДЕШЬ ЗАЩИЩАТЬ НАС ОТ ЖЕНЩИН, А НЕ ПРИМКНЕШЬ К НИМ!'
+                response += 'ТЫ БЫЛ ИЗБРАННИКОМ! ВСЕ ДУМАЛИ, ЧТО ТЫ БУДЕШЬ ЗАЩИЩАТЬ НАС ОТ ЖЕНЩИН, А НЕ ПРИМКНЕШЬ К НИМ!'
             else:
-                response = f'Чайник не вскипел 🤬 Смотри, чтобы девушка не появилась. Осталось не выпитых чаёв: {user_info["kettle_failed"]}'
+                response += f'Чайник не вскипел 🤬 Смотри, чтобы девушка не появилась. Осталось не выпитых чаёв: {user_info["kettle_failed"]}'
         else:
-            if random.randint(1, 100) <= 1:
+            if random.randint(1, 100) <= 2:
                 global rare_tea_list
                 rare_tea = random.choice(rare_tea_list)
                 user_info['rare_tea'].append(rare_tea)
-                response = f'ТЕБЕ ПОПАЛСЯ РЕДКИЙ ЧАЙ {rare_tea}'
+                response += f'ТЕБЕ ПОПАЛСЯ РЕДКИЙ ЧАЙ {rare_tea}'
             tea_amount = random.randint(1, 300)
             user_info['tea_drink'] += tea_amount
             if tea_amount <= 150:
-                response = (
-                    f'Ты выпил {tea_amount} чая\nВыпито чая всего: {user_info["tea_drink"]}\nОсталось не выпитых чаёв: {user_info["kettle_failed"]}'
+                response += (
+                    f'\nТы выпил {tea_amount} чая\nВыпито чая всего: {user_info["tea_drink"]}\nОсталось не выпитых чаёв: {user_info["kettle_failed"]}'
                 )
             else:
-                response = (
-                    f'ОМАГАД ТЫ ВЫПИЛ АЖ {tea_amount} Л ЧАЯ!!!\nВыпито чая всего: {user_info["tea_drink"]}\nОсталось не выпитых чаёв: {user_info["kettle_failed"]}'
+                response += (
+                    f'\nОМАГАД ТЫ ВЫПИЛ АЖ {tea_amount} Л ЧАЯ!!!\nВыпито чая всего: {user_info["tea_drink"]}\nОсталось не выпитых чаёв: {user_info["kettle_failed"]}'
                 )
     else:
-        response = 'Тебе уже нет смысла пить чай, ситх...'
+        response += 'Тебе уже нет смысла пить чай, ситх...'
 
     bot.reply_to(message, response)
     save_user_data()
@@ -277,7 +277,7 @@ def nagradit(message: types.Message):
     if is_admin(message.chat.id, message.from_user.id):
         try:
             commands_part = message.text.split()
-            if len(commands_part) < 3:
+            if len(commands_part) < 4:
                 bot.reply_to(message, 'неправильно написал бож🙄 нада так: тодзи наградить (имя этого немоща) (название награды)' )
                 return
             # ['тодзи', 'наградить', '@username,' 'награда']
@@ -309,12 +309,12 @@ def nagradit(message: types.Message):
         bot.reply_to(message, f'ахахаха какой то рапик хочет дать награду хотя у него не хватает социал кредита ')
 
 @bot.message_handler(func=lambda message:message.text and message.text.lower().startswith('тодзи снять награду'))
-def nagradit(message: types.Message):
+def snat_nagradit(message: types.Message):
     if is_admin(message.chat.id, message.from_user.id):
         try:
             command_parts = message.text.split()
     
-            if len(command_parts) < 3:
+            if len(command_parts) < 5:
                 bot.reply_to(message, 'неправильно написал бож🙄 нада так: тодзи снять награду (имя этого немоща) (название награды)' )
                 return
                 
@@ -356,6 +356,21 @@ def find_user_by_username(chat_id, username):
         if member.user.username and member.user.username.lower() == username.lower():
             return member.user
     return None
+
+
+@bot.message_handler(func=lambda message: message.text and message.text.lower() == 'тодзи лох')
+def aa(message:types.Message):
+    bot.reply_to(message, 'ааахах нюхай мои пятки щенок')
+
+
+@bot.message_handler(funk=lambda message: message.text and message.text.lower() == 'тодзи инфа' and message.reply_to_message is not None)
+def gg(message):
+    a = message.reply_to_message.text
+    bot.reply_to(message, f'ну я думаю {a} что вероятность {random.randint(1, 100)}%')
+   
+
+
+
 
 # Запуск бота
 if __name__ == '__main__':
